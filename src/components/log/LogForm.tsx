@@ -5,12 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, CheckCircle2, Video } from "lucide-react";
 import { toast } from "sonner";
 import CreatableMovementSelect from "./CreatableMovementSelect";
 import UnitConverter from "./UnitConverter";
 import MediaUploader from "./MediaUploader";
 import ConfettiCelebration from "./ConfettiCelebration";
+import { cn } from "@/lib/utils";
 
 type Movement = { id: string; name: string; category: string };
 
@@ -24,6 +25,10 @@ const LogForm = () => {
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [executedSuccessfully, setExecutedSuccessfully] = useState(false);
+
+  const category = movement?.category ?? "strength";
+  const isSkill = category === "skill";
 
   const reset = () => {
     setMovement(null);
@@ -32,6 +37,7 @@ const LogForm = () => {
     setNotes("");
     setIsPr(false);
     setMediaUrl(null);
+    setExecutedSuccessfully(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,13 +47,18 @@ const LogForm = () => {
       return;
     }
 
+    const skillPrefix = isSkill
+      ? executedSuccessfully ? "[Sucesso] " : "[Tentativa] "
+      : "";
+    const finalNotes = notes ? `${skillPrefix}${notes}` : skillPrefix.trim() || null;
+
     setSaving(true);
     const { error } = await supabase.from("logs").insert({
       user_id: user.id,
       movement_id: movement.id,
-      weight_kg: weightKg ? parseFloat(weightKg) : null,
-      reps: reps ? parseInt(reps) : null,
-      notes: notes || null,
+      weight_kg: isSkill ? null : (weightKg ? parseFloat(weightKg) : null),
+      reps: isSkill ? null : (reps ? parseInt(reps) : null),
+      notes: finalNotes,
       is_pr: isPr,
       media_url: mediaUrl,
     });
@@ -71,37 +82,74 @@ const LogForm = () => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <CreatableMovementSelect value={movement} onChange={setMovement} />
 
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Carga (Kg)
-            </label>
-            <div className="flex gap-2">
+        {/* Strength fields */}
+        <div
+          className={cn(
+            "transition-all duration-300 overflow-hidden",
+            isSkill ? "max-h-0 opacity-0" : "max-h-40 opacity-100"
+          )}
+        >
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Carga (Kg)
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={weightKg}
+                  onChange={(e) => setWeightKg(e.target.value)}
+                />
+                <UnitConverter onApplyKg={(kg) => setWeightKg(String(kg))} />
+              </div>
+            </div>
+            <div className="w-24">
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                Reps
+              </label>
               <Input
                 type="number"
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="0"
-                value={weightKg}
-                onChange={(e) => setWeightKg(e.target.value)}
+                value={reps}
+                onChange={(e) => setReps(e.target.value)}
               />
-              <UnitConverter onApplyKg={(kg) => setWeightKg(String(kg))} />
             </div>
-          </div>
-          <div className="w-24">
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Reps
-            </label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="0"
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-            />
           </div>
         </div>
 
-        <MediaUploader value={mediaUrl} onChange={setMediaUrl} />
+        {/* Skill fields */}
+        <div
+          className={cn(
+            "transition-all duration-300 overflow-hidden",
+            isSkill ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="flex items-center gap-3 glass-card p-4 border-2 border-accent/40">
+            <Checkbox
+              id="executed"
+              checked={executedSuccessfully}
+              onCheckedChange={(v) => setExecutedSuccessfully(v === true)}
+            />
+            <label htmlFor="executed" className="text-sm font-bold cursor-pointer flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-accent" />
+              Executado com sucesso?
+            </label>
+          </div>
+        </div>
+
+        {/* Media uploader - highlighted for skill */}
+        <div className={cn(isSkill && "ring-2 ring-accent/30 rounded-lg p-1 transition-all duration-300")}>
+          {isSkill && (
+            <div className="flex items-center gap-1.5 mb-2 px-1">
+              <Video className="h-4 w-4 text-accent" />
+              <span className="text-xs font-semibold text-accent">Registre em vídeo!</span>
+            </div>
+          )}
+          <MediaUploader value={mediaUrl} onChange={setMediaUrl} />
+        </div>
 
         <div>
           <label className="text-sm font-medium text-muted-foreground mb-2 block">
