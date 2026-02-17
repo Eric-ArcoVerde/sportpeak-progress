@@ -1,80 +1,57 @@
 
+# Formulario Inteligente com UI Condicional
 
-# SportPeak — PWA Mobile-First para Evolução Esportiva 🏆
+## Objetivo
+Tornar o formulario de registro dinamico: quando o usuario selecionar um movimento do tipo **Strength**, exibir campos de Peso e Reps. Quando selecionar **Skill**, esconder peso/reps e mostrar um checkbox "Executado com sucesso?" com destaque no upload de video.
 
-## Visão Geral
-App progressivo (PWA) mobile-first para registrar e acompanhar evolução em esportes híbridos como Cheerleading, Ginástica e Musculação. Design moderno, escuro e esportivo.
+## Alteracoes
 
----
+### Arquivo: `src/components/log/LogForm.tsx`
 
-## Fase 1: Infraestrutura & Autenticação
+1. **Adicionar estado `executedSuccessfully`** para o checkbox de Skill.
 
-### Supabase + Banco de Dados
-- Configurar Lovable Cloud (Supabase integrado)
-- Criar tabelas: **profiles**, **movements**, **logs** conforme schema especificado
-- Criar bucket público **evidence-media** para fotos/vídeos
-- Configurar RLS: logs privados por usuário, movements com leitura pública e escrita para autenticados
-- Trigger para criar profile automaticamente no signup
+2. **Derivar a categoria** a partir do `movement` selecionado (`movement?.category`).
 
-### Autenticação
-- Tela de Login/Cadastro com email e senha
-- Redirecionamento automático pós-login
-- Proteção de rotas autenticadas
+3. **Renderizacao condicional dos campos:**
+   - Se `category === "strength"` (ou nenhum movimento selecionado): mostrar bloco de Peso (com UnitConverter) e Reps como esta hoje.
+   - Se `category === "skill"`: esconder peso/reps e exibir:
+     - Checkbox "Executado com sucesso?" com estilo destacado.
+     - MediaUploader com label enfatizando video ("Registre em video!").
 
-### PWA
-- Configurar vite-plugin-pwa com manifest, ícones e service worker
-- Meta tags mobile-otimizadas
-- Página `/install` para instalação no dispositivo
+4. **Ajustar `handleSubmit`:**
+   - Para Skill: enviar `weight_kg: null`, `reps: null`, e usar o campo `notes` para registrar se foi executado com sucesso (ou adicionar essa info ao payload).
+   - Para Strength: manter comportamento atual.
 
----
+5. **Ajustar `reset`:** limpar tambem o estado `executedSuccessfully`.
 
-## Fase 2: Formulário Inteligente de Registro (LogForm)
+6. **Animacao de transicao:** usar classes CSS de fade/slide para suavizar a troca entre os modos.
 
-### Creatable Select para Movimentos
-- Componente de busca que lista movimentos existentes do banco
-- Se o movimento digitado não existir, opção de criar automaticamente
-- Categorização: skill ou strength
+### Nenhuma alteracao de banco de dados necessaria
+A tabela `logs` ja aceita `weight_kg` e `reps` como nullable, entao registros de Skill funcionam perfeitamente com esses campos como `null`.
 
-### Input de Carga com Calculadora
-- Campo principal em KG
-- Botão "Calculadora" ao lado que abre modal de conversão Lbs ↔ Kg
-- Sempre salva em Kg no banco
+## Detalhes Tecnicos
 
-### Upload de Mídia (MediaUploader)
-- Botão para upload de foto ou vídeo ao bucket evidence-media
-- Preview do arquivo antes de salvar
-- URL salva automaticamente no log
+```text
++---------------------------+
+| Movimento selecionado     |
++---------------------------+
+         |
+    category?
+    /         \
+strength      skill
+  |              |
+Peso (Kg)     Checkbox:
++ Converter   "Executado com
+Reps          sucesso?"
+  |              |
+MediaUploader  MediaUploader
+(opcional)     (destaque)
+  |              |
+Observacoes   Observacoes
+PR checkbox   PR checkbox
+Salvar        Salvar
+```
 
-### Feedback Visual de PR
-- Checkbox "É um PR / Primeira vez?"
-- Ao salvar com PR marcado: animação de confetti na tela inteira
-- Modal de parabéns: "Novo Recorde Registrado! 🏆"
-
----
-
-## Fase 3: Dashboard & Histórico
-
-### Feed de Logs (MovementCard)
-- Lista cronológica dos registros do usuário
-- Cards com: nome do movimento, carga, reps, data, badge de PR
-- Se houver vídeo: player/thumbnail inline
-- Se não houver mídia: ícone estilizado da categoria (haltere para strength, silhueta para skill)
-
-### Filtros
-- Barra fixa no topo do feed
-- Filtro "Todos" ou por movimento específico
-- Permite ver a evolução isolada de um movimento (ex: só Back Tuck)
-
----
-
-## Fase 4: Navegação & Estrutura
-
-### Layout Mobile-First
-- Bottom navigation bar com: Home (Dashboard), Novo Log (+), Perfil
-- Design escuro e esportivo com acentos vibrantes
-- Componentes modulares: MovementCard, LogForm, UnitConverter, MediaUploader
-
-### Perfil
-- Avatar, username
-- Resumo de stats (total de logs, PRs registrados)
-
+- O campo `is_pr` continua disponivel em ambos os modos (um Skill tambem pode ser PR).
+- Para Skill, o campo `notes` recebera automaticamente o prefixo "[Sucesso]" ou "[Tentativa]" baseado no checkbox, alem de qualquer observacao adicional do usuario.
+- O MediaUploader aparece em ambos os modos, mas no modo Skill recebe destaque visual (borda accent, label diferente).
