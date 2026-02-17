@@ -2,11 +2,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LogOut, User, Camera, Loader2 } from "lucide-react";
+import { LogOut, User, Camera, Loader2, Trash2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SPORTS = [
   "Cheerleading",
@@ -20,10 +32,12 @@ const SPORTS = [
 
 const Profile = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [mainSport, setMainSport] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -159,6 +173,50 @@ const Profile = () => {
           <LogOut className="h-4 w-4 mr-2" />
           Sair da conta
         </Button>
+
+        <div className="mt-8 border-t border-destructive/20 pt-6">
+          <p className="text-sm font-medium text-destructive mb-3">Zona de Perigo</p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full" disabled={deleting}>
+                {deleting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                {deleting ? "Excluindo..." : "Excluir Minha Conta"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir conta permanentemente?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza? Seus treinos serão apagados, mas os exercícios que você contribuiu para o catálogo permanecerão públicos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    setDeleting(true);
+                    const { data, error } = await supabase.functions.invoke("delete-account");
+                    if (error || !data?.success) {
+                      toast.error("Erro ao excluir conta. Tente novamente.");
+                      setDeleting(false);
+                      return;
+                    }
+                    await signOut();
+                    navigate("/auth");
+                    toast.success("Conta excluída com sucesso.");
+                  }}
+                >
+                  Sim, excluir minha conta
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );
