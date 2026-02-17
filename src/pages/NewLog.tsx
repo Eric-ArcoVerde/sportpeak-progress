@@ -1,11 +1,11 @@
+import LogForm from "@/components/log/LogForm";
+
 const NewLog = () => {
   return (
-    <div className="px-4 pt-6">
+    <div className="px-4 pt-6 pb-4">
       <h1 className="text-2xl font-black mb-4">Novo Registro</h1>
-      <div className="glass-card p-6 text-center">
-        <p className="text-muted-foreground text-sm">
-          Formulário de registro será implementado na Fase 2.
-        </p>
+      <div className="glass-card p-5 animate-fade-in">
+        <LogForm />
       </div>
     </div>
   );

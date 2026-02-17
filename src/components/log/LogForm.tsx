@@ -1,0 +1,153 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
+import CreatableMovementSelect from "./CreatableMovementSelect";
+import UnitConverter from "./UnitConverter";
+import MediaUploader from "./MediaUploader";
+import ConfettiCelebration from "./ConfettiCelebration";
+
+type Movement = { id: string; name: string; category: string };
+
+const LogForm = () => {
+  const { user } = useAuth();
+  const [movement, setMovement] = useState<Movement | null>(null);
+  const [weightKg, setWeightKg] = useState("");
+  const [reps, setReps] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isPr, setIsPr] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  const reset = () => {
+    setMovement(null);
+    setWeightKg("");
+    setReps("");
+    setNotes("");
+    setIsPr(false);
+    setMediaUrl(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!movement || !user) {
+      toast.error("Selecione um movimento");
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from("logs").insert({
+      user_id: user.id,
+      movement_id: movement.id,
+      weight_kg: weightKg ? parseFloat(weightKg) : null,
+      reps: reps ? parseInt(reps) : null,
+      notes: notes || null,
+      is_pr: isPr,
+      media_url: mediaUrl,
+    });
+    setSaving(false);
+
+    if (error) {
+      toast.error("Erro ao salvar registro");
+      return;
+    }
+
+    if (isPr) {
+      setShowCelebration(true);
+    } else {
+      toast.success("Registro salvo! 💪");
+      reset();
+    }
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <CreatableMovementSelect value={movement} onChange={setMovement} />
+
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Carga (Kg)
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+              />
+              <UnitConverter onApplyKg={(kg) => setWeightKg(String(kg))} />
+            </div>
+          </div>
+          <div className="w-24">
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Reps
+            </label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              placeholder="0"
+              value={reps}
+              onChange={(e) => setReps(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <MediaUploader value={mediaUrl} onChange={setMediaUrl} />
+
+        <div>
+          <label className="text-sm font-medium text-muted-foreground mb-2 block">
+            Observações (opcional)
+          </label>
+          <Textarea
+            placeholder="Ex: Boa execução, sentindo evolução..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+          />
+        </div>
+
+        <div className="flex items-center gap-3 glass-card p-3">
+          <Checkbox
+            id="pr"
+            checked={isPr}
+            onCheckedChange={(v) => setIsPr(v === true)}
+          />
+          <label htmlFor="pr" className="text-sm font-medium cursor-pointer">
+            🏆 É um PR / Primeira vez!
+          </label>
+        </div>
+
+        <Button type="submit" className="w-full h-12 text-base font-bold" disabled={saving}>
+          {saving ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <Save className="h-5 w-5 mr-2" />
+              Salvar Registro
+            </>
+          )}
+        </Button>
+      </form>
+
+      <ConfettiCelebration
+        open={showCelebration}
+        onClose={() => {
+          setShowCelebration(false);
+          toast.success("Registro salvo! 💪");
+          reset();
+        }}
+      />
+    </>
+  );
+};
+
+export default LogForm;
