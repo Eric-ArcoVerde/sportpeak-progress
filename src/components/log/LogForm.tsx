@@ -148,7 +148,7 @@ const LogForm = () => {
               <span className="text-xs font-semibold text-accent">Registre em vídeo!</span>
             </div>
           )}
-          <MediaUploader value={mediaUrl} onChange={setMediaUrl} />
+          <MediaUploader value={mediaUrl} onChange={setMediaUrl} userId={user?.id} />
         </div>
 
         <div>

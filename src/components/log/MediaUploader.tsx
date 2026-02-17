@@ -7,15 +7,21 @@ import { toast } from "sonner";
 type Props = {
   value: string | null;
   onChange: (url: string | null) => void;
+  userId?: string;
 };
 
-const MediaUploader = ({ value, onChange }: Props) => {
+const MediaUploader = ({ value, onChange, userId }: Props) => {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!userId) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
 
     const maxMb = 50;
     if (file.size > maxMb * 1024 * 1024) {
@@ -25,14 +31,15 @@ const MediaUploader = ({ value, onChange }: Props) => {
 
     setUploading(true);
     const ext = file.name.split(".").pop();
-    const path = `${crypto.randomUUID()}.${ext}`;
+    const path = `${userId}/${crypto.randomUUID()}.${ext}`;
 
     const { error } = await supabase.storage
       .from("evidence-media")
-      .upload(path, file, { upsert: true });
+      .upload(path, file, { upsert: false });
 
     if (error) {
-      toast.error("Erro no upload");
+      console.error("Upload error:", error);
+      toast.error(`Erro ao enviar: ${error.message}`);
       setUploading(false);
       return;
     }
@@ -42,6 +49,7 @@ const MediaUploader = ({ value, onChange }: Props) => {
       .getPublicUrl(path);
 
     onChange(urlData.publicUrl);
+    toast.success("Mídia enviada!");
     setUploading(false);
   };
 
