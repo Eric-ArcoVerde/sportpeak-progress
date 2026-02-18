@@ -20,7 +20,7 @@ const LogCard = ({ log }: Props) => {
     )}>
       {/* Media or category icon */}
       {hasMedia ? (
-        <div className="relative h-36 bg-muted">
+        <div className="relative h-48 bg-muted">
           {isVideo ? (
             <video src={log.media_url!} className="w-full h-full object-cover" muted />
           ) : (
@@ -33,7 +33,7 @@ const LogCard = ({ log }: Props) => {
           )}
         </div>
       ) : (
-        <div className="flex items-center justify-center h-20 bg-muted/30">
+        <div className="relative flex items-center justify-center h-48 bg-muted/30">
           {isSkill ? (
             <PersonStanding className="h-10 w-10 text-accent/50" />
           ) : (

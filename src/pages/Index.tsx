@@ -31,7 +31,7 @@ const Index = () => {
       />
 
       {/* Feed */}
-      <div className="mt-4 space-y-3 pb-4">
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
