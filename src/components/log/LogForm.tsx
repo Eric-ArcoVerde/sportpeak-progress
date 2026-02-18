@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ type Movement = { id: string; name: string; category: string };
 
 const LogForm = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [movement, setMovement] = useState<Movement | null>(null);
   const [weightKg, setWeightKg] = useState("");
   const [reps, setReps] = useState("");
@@ -74,6 +76,7 @@ const LogForm = () => {
     } else {
       toast.success("Registro salvo! 💪");
       reset();
+      navigate("/");
     }
   };
 
@@ -192,6 +195,7 @@ const LogForm = () => {
           setShowCelebration(false);
           toast.success("Registro salvo! 💪");
           reset();
+          navigate("/");
         }}
       />
     </>
