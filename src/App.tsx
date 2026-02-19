@@ -7,6 +7,8 @@ import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import NewLog from "./pages/NewLog";
 import Profile from "./pages/Profile";
+import LogDetails from "./pages/LogDetails";
+import LogEdit from "./pages/LogEdit";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/new" element={<NewLog />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/log/:id" element={<LogDetails />} />
+            <Route path="/log/:id/edit" element={<LogEdit />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

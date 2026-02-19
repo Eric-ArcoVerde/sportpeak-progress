@@ -1,6 +1,7 @@
 import { Dumbbell, PersonStanding, Trophy, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Link } from "react-router-dom";
 import type { LogEntry } from "@/hooks/useLogs";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +15,13 @@ const LogCard = ({ log }: Props) => {
   const successTag = log.notes?.startsWith("[Sucesso]");
 
   return (
-    <div className={cn(
-      "glass-card overflow-hidden animate-fade-in",
-      log.is_pr && "ring-1 ring-[hsl(var(--pr-glow))] glow-accent"
-    )}>
+    <Link
+      to={`/log/${log.id}`}
+      className={cn(
+        "glass-card overflow-hidden animate-fade-in block cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all",
+        log.is_pr && "ring-1 ring-[hsl(var(--pr-glow))] glow-accent"
+      )}
+    >
       {/* Media or category icon */}
       {hasMedia ? (
         <div className="relative h-48 bg-muted">
@@ -80,7 +84,7 @@ const LogCard = ({ log }: Props) => {
           {format(parseISO(log.date), "dd MMM yyyy", { locale: ptBR })}
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

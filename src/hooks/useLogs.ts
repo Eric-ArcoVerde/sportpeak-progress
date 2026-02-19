@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 
 export type LogEntry = {
   id: string;
+  user_id: string;
   date: string;
   weight_kg: number | null;
   reps: number | null;
@@ -27,7 +28,7 @@ export function useLogs(movementFilter?: string | null) {
     queryFn: async (): Promise<LogEntry[]> => {
       let query = supabase
         .from("logs")
-        .select("id, date, weight_kg, reps, is_pr, notes, media_url, created_at, movement_id")
+        .select("id, user_id, date, weight_kg, reps, is_pr, notes, media_url, created_at, movement_id")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -50,6 +51,7 @@ export function useLogs(movementFilter?: string | null) {
 
       return logs.map((l) => ({
         id: l.id,
+        user_id: l.user_id,
         date: l.date,
         weight_kg: l.weight_kg,
         reps: l.reps,
