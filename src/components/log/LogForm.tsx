@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,24 +14,40 @@ import UnitConverter from "./UnitConverter";
 import MediaUploader from "./MediaUploader";
 import ConfettiCelebration from "./ConfettiCelebration";
 import { cn } from "@/lib/utils";
+import type { LogEntry } from "@/hooks/useLogs";
 
 type Movement = { id: string; name: string; category: string };
 
-const LogForm = () => {
+type Props = {
+  mode?: "create" | "edit";
+  initialData?: LogEntry;
+};
+
+const LogForm = ({ mode = "create", initialData }: Props) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [movement, setMovement] = useState<Movement | null>(null);
-  const [weightKg, setWeightKg] = useState("");
-  const [reps, setReps] = useState("");
-  const [notes, setNotes] = useState("");
-  const [isPr, setIsPr] = useState(false);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const [movement, setMovement] = useState<Movement | null>(
+    initialData ? initialData.movement : null
+  );
+  const [weightKg, setWeightKg] = useState(initialData?.weight_kg?.toString() ?? "");
+  const [reps, setReps] = useState(initialData?.reps?.toString() ?? "");
+  const [notes, setNotes] = useState(() => {
+    if (!initialData?.notes) return "";
+    return initialData.notes.replace(/^\[(Sucesso|Tentativa)\]\s*/, "");
+  });
+  const [isPr, setIsPr] = useState(initialData?.is_pr ?? false);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(initialData?.media_url ?? null);
   const [saving, setSaving] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [executedSuccessfully, setExecutedSuccessfully] = useState(false);
+  const [executedSuccessfully, setExecutedSuccessfully] = useState(
+    initialData?.notes?.startsWith("[Sucesso]") ?? false
+  );
 
   const category = movement?.category ?? "strength";
   const isSkill = category === "skill";
+  const isEdit = mode === "edit";
 
   const reset = () => {
     setMovement(null);
@@ -55,6 +72,30 @@ const LogForm = () => {
     const finalNotes = notes ? `${skillPrefix}${notes}` : skillPrefix.trim() || null;
 
     setSaving(true);
+
+    if (isEdit && initialData) {
+      const { error } = await supabase.from("logs").update({
+        movement_id: movement.id,
+        weight_kg: isSkill ? null : (weightKg ? parseFloat(weightKg) : null),
+        reps: isSkill ? null : (reps ? parseInt(reps) : null),
+        notes: finalNotes,
+        is_pr: isPr,
+        media_url: mediaUrl,
+      }).eq("id", initialData.id);
+      setSaving(false);
+
+      if (error) {
+        toast.error("Erro ao atualizar registro");
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      queryClient.invalidateQueries({ queryKey: ["log", initialData.id] });
+      toast.success("Registro atualizado! ✅");
+      navigate(`/log/${initialData.id}`);
+      return;
+    }
+
     const { error } = await supabase.from("logs").insert({
       user_id: user.id,
       movement_id: movement.id,
@@ -183,21 +224,23 @@ const LogForm = () => {
           ) : (
             <>
               <Save className="h-5 w-5 mr-2" />
-              Salvar Registro
+              {isEdit ? "Salvar Alterações" : "Salvar Registro"}
             </>
           )}
         </Button>
       </form>
 
-      <ConfettiCelebration
-        open={showCelebration}
-        onClose={() => {
-          setShowCelebration(false);
-          toast.success("Registro salvo! 💪");
-          reset();
-          navigate("/");
-        }}
-      />
+      {!isEdit && (
+        <ConfettiCelebration
+          open={showCelebration}
+          onClose={() => {
+            setShowCelebration(false);
+            toast.success("Registro salvo! 💪");
+            reset();
+            navigate("/");
+          }}
+        />
+      )}
     </>
   );
 };
