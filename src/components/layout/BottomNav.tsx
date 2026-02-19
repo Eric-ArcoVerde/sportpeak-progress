@@ -1,14 +1,21 @@
 import { NavLink } from "react-router-dom";
-import { Home, Plus, User } from "lucide-react";
+import { Home, Plus, User, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-const navItems = [
+const baseNavItems = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/new", icon: Plus, label: "Novo", highlight: true },
   { to: "/profile", icon: User, label: "Perfil" },
 ];
 
 const BottomNav = () => {
+  const { isAdmin } = useIsAdmin();
+
+  const navItems = isAdmin
+    ? [...baseNavItems, { to: "/admin", icon: Shield, label: "Admin" }]
+    : baseNavItems;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/80 backdrop-blur-xl">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-4" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
@@ -16,6 +23,7 @@ const BottomNav = () => {
           <NavLink
             key={item.to}
             to={item.to}
+            end={item.to === "/"}
             className={({ isActive }) =>
               cn(
                 "flex flex-col items-center justify-center gap-1 w-16 py-1 rounded-xl transition-all",
@@ -51,3 +59,4 @@ const BottomNav = () => {
 };
 
 export default BottomNav;
+

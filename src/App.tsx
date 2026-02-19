@@ -9,9 +9,11 @@ import NewLog from "./pages/NewLog";
 import Profile from "./pages/Profile";
 import LogDetails from "./pages/LogDetails";
 import LogEdit from "./pages/LogEdit";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import AppLayout from "./components/layout/AppLayout";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import AdminRoute from "./components/layout/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,14 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/log/:id" element={<LogDetails />} />
             <Route path="/log/:id/edit" element={<LogEdit />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
